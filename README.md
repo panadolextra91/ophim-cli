@@ -58,7 +58,7 @@ Vậy là từ giờ cưng chỉ cần gõ "xemphim" trên Terminal/iTerm/Kitty 
 - **Windows (PowerShell):** `go build -o xemphim.exe`
 Sau đó add folder chứa file này vào PATH hoặc copy vào C:\Windows
 
---
+---
 
 ## ⌨️ Phím tắt khi xem (MPV)
 | Phím | Tác dụng |
@@ -69,7 +69,7 @@ Sau đó add folder chứa file này vào PATH hoặc copy vào C:\Windows
 | `Q` | Thoát phim quay lại CLI |
 | `Mũi tên Trái/Phải` | Tua phim (-5s / +5s) |
 
---
+---
 
 ## LƯU Ý
 Để hiện icon đẹp như trên terminal của cj thì mấy cưng nên xài terminal xịn như iTerm2 hoặc Kitty nho, và nhớ cài Nerd Fonts nèk!!!

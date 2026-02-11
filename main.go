@@ -29,8 +29,7 @@ const (
 	StateSearch       = 0
 	StateBrowse       = 1
 	StateEpisodes     = 2
-	// [FIX] Đường dẫn cứng trên máy bà
-	HistoryFile = "/Users/huynhngocanhthu/ophim-cli/history.json"
+	HistoryFile       = "/Users/huynhngocanhthu/ophim-cli/history.json" //Làm ơn sửa cái path này dùm? Trỏ về cái path của cái project này trên máy cưng nha
 )
 
 // --- STYLE ---
@@ -43,6 +42,7 @@ var (
 	descStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#cdd6f4"))
 	posterStyle     = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("#f38ba8"))
 	welcomeStyle    = lipgloss.NewStyle().Border(lipgloss.DoubleBorder()).BorderForeground(lipgloss.Color("#b4befe")).Padding(1, 2).Align(lipgloss.Center)
+	errorStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff5555")).Bold(true).Padding(1)
 )
 
 // --- DATA STRUCTURES ---
@@ -98,8 +98,9 @@ type MovieDetailResponse struct {
 }
 
 type DetailLoadedMsg struct {
-	Slug   string
-	Detail MovieDetail
+	Slug    string
+	Detail  MovieDetail
+	IsError bool
 }
 
 // --- MODEL ---
@@ -115,12 +116,11 @@ type model struct {
 
 	detailCache   map[string]MovieDetail
 	domainCDN     string
-	statusMsg     string
 	debounceTimer *time.Timer
 	width, height int
 }
 
-// --- PERSISTENCE (2 HÀM BÀ CẦN ĐÂY) ---
+// --- PERSISTENCE ---
 func saveHistory(h History) {
 	data, _ := json.Marshal(h)
 	_ = os.WriteFile(HistoryFile, data, 0644)
@@ -141,7 +141,7 @@ func initialModel() model {
 	hist := loadHistory()
 
 	ti := textinput.New()
-	ti.Placeholder = "Cục dzàng muốn coi phim j nè..."
+	ti.Placeholder = "Cục dzàng mún coi phim gì nè..."
 	ti.Focus()
 	ti.Width = 30
 
@@ -153,7 +153,6 @@ func initialModel() model {
 	eList.SetShowHelp(false)
 
 	startState := StateSearch
-	// Nếu có lịch sử thì hiện màn hình chào
 	if hist.LastMovieSlug != "" {
 		startState = StateWelcome
 	}
@@ -189,18 +188,47 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
-		case "esc", "backspace":
-			if m.state == StateWelcome || m.state == StateSearch {
+		case "esc":
+			// Esc thì cho thoát luôn cho nhanh nếu đang ở Search hoặc Welcome
+			if m.state == StateSearch || m.state == StateWelcome {
 				return m, tea.Quit
 			}
+			// Các màn hình khác thì quay lại
 			if m.state == StateEpisodes {
 				m.state = StateBrowse
 				return m, nil
 			}
 			if m.state == StateBrowse {
 				m.state = StateSearch
+				m.textInput.Reset()
 				m.textInput.Focus()
 				return m, nil
+			}
+
+		case "backspace":
+			// [QUAN TRỌNG] Nếu đang Search, mình chỉ xoá lỗi (nếu có)
+			// Tuyệt đối KHÔNG return m, nil ở đây.
+			// Hãy để nó chạy tiếp xuống cuối hàm để m.textInput nhận được phím xoá!
+			if m.state == StateSearch {
+				if m.err != nil {
+					m.err = nil
+				}
+				// Không return gì cả, để nó "rơi" xuống dưới
+			} else {
+				// Các màn hình khác thì Backspace vẫn là quay lại
+				if m.state == StateWelcome {
+					return m, tea.Quit
+				}
+				if m.state == StateEpisodes {
+					m.state = StateBrowse
+					return m, nil
+				}
+				if m.state == StateBrowse {
+					m.state = StateSearch
+					m.textInput.Reset()
+					m.textInput.Focus()
+					return m, nil
+				}
 			}
 
 		case "y", "Y":
@@ -215,6 +243,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			if m.state == StateSearch {
+				m.err = nil
 				return m, searchMoviesCmd(m.textInput.Value())
 			} else if m.state == StateBrowse {
 				itm, ok := m.movieList.SelectedItem().(Movie)
@@ -228,7 +257,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if link == "" {
 						link = ep.LinkEmbed
 					}
-					// Lưu History khi bấm xem
 					m.history = History{
 						LastMovieName: m.detailCache[m.selectedSlug].Name,
 						LastMovieSlug: m.selectedSlug,
@@ -247,19 +275,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for _, v := range msg.Data.Items {
 			items = append(items, v)
 		}
+
+		// [FIX] Nếu không có kết quả, hiện lỗi chứ không sập!
+		if len(items) == 0 {
+			m.err = fmt.Errorf("Huhu, không tìm thấy phim này bà ơi! 😢")
+			return m, nil
+		}
+
 		m.movieList.SetItems(items)
 		m.state = StateBrowse
 		m.movieList.Select(0)
 		cmds = append(cmds, m.triggerDebounceDetail(items[0].(Movie)))
 
 	case DetailLoadedMsg:
-		m.detailCache[msg.Slug] = msg.Detail
-		if m.state == StateBrowse {
-			m.viewport.SetContent(lipgloss.NewStyle().Width(m.viewport.Width).Render(cleanHTML(msg.Detail.Content)))
-		}
-		if m.selectedSlug == msg.Slug && m.state == StateBrowse {
-			newModel, cmd := m.enterMovie(msg.Slug)
-			return newModel, cmd
+		if !msg.IsError {
+			m.detailCache[msg.Slug] = msg.Detail
+			if m.state == StateBrowse {
+				m.viewport.SetContent(lipgloss.NewStyle().Width(m.viewport.Width).Render(cleanHTML(msg.Detail.Content)))
+			}
+			if m.selectedSlug == msg.Slug && m.state == StateBrowse {
+				newModel, cmd := m.enterMovie(msg.Slug)
+				return newModel, cmd
+			}
 		}
 
 	case error:
@@ -294,9 +331,7 @@ func (m *model) enterMovie(slug string) (model, tea.Cmd) {
 	m.selectedSlug = slug
 	detail, ok := m.detailCache[slug]
 	if !ok {
-		return *m, func() tea.Msg {
-			return fetchDetailMsg(slug, "", true)
-		}
+		return *m, func() tea.Msg { return fetchDetailMsg(slug, "", true) }
 	}
 
 	if len(detail.Episodes) > 0 {
@@ -314,11 +349,15 @@ func (m *model) enterMovie(slug string) (model, tea.Cmd) {
 
 // --- VIEW ---
 func (m model) View() string {
+	// [FIX] Hiện thông báo lỗi nếu có
+	if m.err != nil {
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
+			errorStyle.Render(fmt.Sprintf("🚨 LỖI RỒI MÁ ƠI:\n%v\n\n(Bấm Backspace để quay lại)", m.err)))
+	}
+
 	if m.state == StateWelcome {
-		content := fmt.Sprintf(
-			"Chào cục dzàng quay trở lại! 🥰\n\nLần trước bà đang coi dở:\n%s - Tập %s\n\nBà có mún coi tiếp hem? (Y/N)",
-			m.history.LastMovieName, m.history.LastEpName,
-		)
+		content := fmt.Sprintf("Chào cục dzàng quay trở lại! 🥰\n\nLần trước bà đang coi dở:\n%s - Tập %s\n\nBà có mún coi tiếp hem? (Y/N)",
+			m.history.LastMovieName, m.history.LastEpName)
 		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, welcomeStyle.Render(content))
 	}
 
@@ -356,19 +395,35 @@ func (m model) View() string {
 // --- API COMMANDS ---
 func searchMoviesCmd(keyword string) tea.Cmd {
 	return func() tea.Msg {
-		res, _ := http.Get(os.Getenv("OPHIM_SEARCH_URL") + url.QueryEscape(keyword))
+		baseURL := os.Getenv("OPHIM_SEARCH_URL")
+		if baseURL == "" {
+			baseURL = "" //paste vô chỗ này
+		}
+		res, err := http.Get(baseURL + url.QueryEscape(keyword))
+		if err != nil {
+			return err
+		}
 		defer res.Body.Close()
 		var r SearchResponse
-		json.NewDecoder(res.Body).Decode(&r)
+		if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+			return err
+		}
 		return r
 	}
 }
 
 func fetchDetailMsg(slug, thumb string, isEnter bool) tea.Msg {
-	res, _ := http.Get(os.Getenv("OPHIM_DETAIL_URL") + slug)
+	baseURL := os.Getenv("OPHIM_DETAIL_URL")
+	if baseURL == "" {
+		baseURL = "" //paste vô chỗ này
+	}
+	res, err := http.Get(baseURL + slug)
+	if err != nil {
+		return DetailLoadedMsg{IsError: true}
+	}
 	defer res.Body.Close()
 	var r MovieDetailResponse
-	json.NewDecoder(res.Body).Decode(&res)
+	json.NewDecoder(res.Body).Decode(&r)
 	d := r.Data.Item
 
 	fallbackBlock := lipgloss.NewStyle().Align(lipgloss.Center).Render(lipgloss.JoinVertical(lipgloss.Center,
@@ -377,7 +432,6 @@ func fetchDetailMsg(slug, thumb string, isEnter bool) tea.Msg {
 		lipgloss.NewStyle().Foreground(lipgloss.Color("#bac2de")).Render("Ảnh lỗi!"),
 	))
 	d.ASCIIArt = lipgloss.Place(20, 10, lipgloss.Center, lipgloss.Center, fallbackBlock, lipgloss.WithWhitespaceChars(" "))
-
 	return DetailLoadedMsg{Slug: slug, Detail: d}
 }
 
