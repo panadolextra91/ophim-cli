@@ -1,4 +1,14 @@
-# 🎬 OPHIM CLI - RẠP CHIẾU PHIM "VÙNG KÍN" 🍿
+# 🎬 OPHIM CLI - RẠP CHIẾU PHIM "VÙNG KÍN" - TÔI YÊU PHÂU LỊM 🍿
+
+![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)
+![MPV](https://img.shields.io/badge/MPV-5E2B97?style=for-the-badge&logo=mpv&logoColor=white)
+![Catppuccin](https://img.shields.io/badge/Catppuccin-F5E0DC?style=for-the-badge&logo=catppuccin&logoColor=black)
+![Terminal](https://img.shields.io/badge/Terminal-CLI-black?style=for-the-badge&logo=gnumetallica)
+
+![Trạng thái](https://img.shields.io/badge/Trạng%20thái-Đang%20chiếu-brightgreen?style=flat-square)
+![Quảng cáo](https://img.shields.io/badge/Quảng%20cáo-Bypass%20100%25-red?style=flat-square)
+![Tốc độ](https://img.shields.io/badge/Tốc%20độ-Mượt%20hơn%20NYC-orange?style=flat-square)
+![Vùng kín](https://img.shields.io/badge/Bảo%20mật-Vùng%20kín%20an%20toàn-blueviolet?style=flat-square)
 
 Chào cục dzàng! Đây là công cụ xem phim lậu đỉnh cao chạy ngay trong Terminal, được tối ưu cho các mấy cưng nào thích vừa code vừa cày phim. Giao diện Catppuccin siêu cute, có lịch sử xem phim và tính năng chào hỏi cực sến.
 
