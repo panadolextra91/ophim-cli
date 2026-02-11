@@ -1,0 +1,22 @@
+# Binaries for programs and plugins
+xemphim
+xemphim.exe
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Dependency directories
+vendor/
+
+# Personal configuration and data
+.env
+history.json
+
+# Go workspace file
+go.work
+
+# OS specific files
+.DS_Store
+Thumbs.db
