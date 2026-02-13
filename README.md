@@ -1,88 +1,184 @@
-# 🎬 OPHIM CLI - RẠP CHIẾU PHIM "VÙNG KÍN" - TÔI YÊU PHÂU LỊM 🍿
-
-![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)
-![MPV](https://img.shields.io/badge/MPV-5E2B97?style=for-the-badge&logo=mpv&logoColor=white)
-![Catppuccin](https://img.shields.io/badge/Catppuccin-F5E0DC?style=for-the-badge&logo=catppuccin&logoColor=black)
-![Terminal](https://img.shields.io/badge/Terminal-CLI-black?style=for-the-badge&logo=gnumetallica)
-
-![Trạng thái](https://img.shields.io/badge/Trạng%20thái-Đang%20chiếu-brightgreen?style=flat-square)
-![Quảng cáo](https://img.shields.io/badge/Quảng%20cáo-Bypass%20100%25-red?style=flat-square)
-![Tốc độ](https://img.shields.io/badge/Tốc%20độ-Mượt%20hơn%20NYC-orange?style=flat-square)
-![Vùng kín](https://img.shields.io/badge/Bảo%20mật-Vùng%20kín%20an%20toàn-blueviolet?style=flat-square)
-
-Chào cục dzàng! Đây là công cụ xem phim lậu đỉnh cao chạy ngay trong Terminal, được tối ưu cho các mấy cưng nào thích vừa code vừa cày phim. Giao diện Catppuccin siêu cute, có lịch sử xem phim và tính năng chào hỏi cực sến.
-
-
-
-## ✨ Tính năng
-- 🔍 **Tìm phim:** Search phát ra luôn.
-- 🎞️ **Chọn tập:** Hỗ trợ cả phim bộ và phim lẻ.
-- 📜 **Lịch sử:** Nhắc cưng xem tiếp tập đang dang dở (Cục dzàng có muốn coi tiếp hem?).
-- 🎨 **Giao diện:** Hệ màu Catppuccin siêu mịn, hỗ trợ cuộn chuột xem mô tả phim.
-- 🚀 **Tốc độ:** Chạy bằng Go + MPV, mượt hơn cả người yêu cũ trở mặt.
+Dưới đây là phiên bản **Markdown chuẩn chỉnh** để bạn copy–paste thẳng vào `README.md` 👇
 
 ---
 
-## 🛠 Yêu cầu hệ thống
-
-Cái "động cơ" chính để phát phim là **MPV**. Cưng phải cài nó trước:
-
-- **MacOS:** `brew install mpv`
-- **Linux (Ubuntu/Debian):** `sudo apt update && sudo apt install mpv`
-- **Windows:** Tải bản Zip tại [mpv.io](https://mpv.io/installation/), giải nén và **add vào PATH** hệ thống.
+# 🎬 OPHIM CLI – TÔI YÊU PHÂU LỊM (OPEN ENGINE EDITION) 🍿
 
 ---
 
-## 🏗 Hướng dẫn cài đặt (Dành cho anh em)
+## ⚠️ TUYÊN BỐ MIỄN TRỪ TRÁCH NHIỆM (DISCLAIMER)
 
-### 1. Clone Project
-```bash
-git clone [https://github.com/your-username/ophim-cli.git](https://github.com/your-username/ophim-cli.git)
-cd ophim-cli
+Dự án này được tạo ra với mục đích **nghiên cứu kỹ thuật** (*Go + MPV integration*) và vọc vạch CLI.
+
+* Tác giả **KHÔNG cung cấp** bất kỳ nội dung, video, hay API lấy phim nào.
+* Phần mềm này chỉ là một **Media Client (vỏ)**.
+* Người dùng cuối chịu trách nhiệm hoàn toàn về việc tìm kiếm nguồn nội dung (Content) và tuân thủ bản quyền của nguồn đó.
+* Tác giả không chịu trách nhiệm cho bất kỳ rắc rối pháp lý nào phát sinh từ phía người dùng.
+
+> Dùng hay không là quyền của cưng, đi tù hay không là chuyện của cưng. 😌
+
+---
+
+## ✨ Tính năng "Ba trợn"
+
+* 🔍 **Search Engine** – Tìm phim thông qua API cưng tự cấu hình.
+* 🎞️ **Multi-Source** – Hỗ trợ phim bộ, phim lẻ, phim "vùng kín" (tùy thuộc vào nguồn cưng có).
+* 📜 **Session Recovery** – Nhắc cưng xem tiếp tập đang dang dở (*Cục dzàng có muốn coi tiếp hem?*).
+* 🎨 **Aesthetic UI** – Hệ màu Catppuccin siêu mịn, hỗ trợ cuộn chuột xem mô tả.
+* 🚀 **High Performance** – Viết bằng Go, mượt hơn cả cách người yêu cũ trở mặt.
+
+---
+
+# 🏗 Cấu hình "Nguồn nước" (API Configuration)
+
+Vì mục đích bảo mật và phủi bỏ trách nhiệm, project này **KHÔNG đi kèm API**.
+Cưng cần chuẩn bị một Server trả về JSON theo đúng định dạng bên dưới.
+
+---
+
+## 1️⃣ Thiết lập file `.env`
+
+Tạo file `.env` ngay tại thư mục root:
+
+```env
+# Link API gốc (Base URL)
+API_BASE_URL="https://your-hidden-provider.com/api"
+
+# Endpoint tìm kiếm (ví dụ: /v1/search?keyword=)
+SEARCH_PATH="/v1/search?keyword="
+
+# Endpoint chi tiết phim (ví dụ: /v1/movie/)
+DETAIL_PATH="/v1/movie/"
 ```
-### 2. Cài con Go
-```bash
-go mod tidy
-```
-
-### 3. Cấu hình "vùng kín" (.env)
-Tạo file .env ngay root nho. Xong cưng làm ơn gửi cho tui cái tin nhắn/email qua facebook https://www.facebook.com/panadolextra9103/ hoặc email anhthuhuynh9103@gmail.com nho
-Sau khi cưng nhận được file .env từ tui, có 2 cách để xài:
-- **Cách lười:** Luôn mở terminal trong đúng folder ophim-cli rồi mới gõ `go run main.go`.
-- **Cách pro (Khuyên dùng):** Mở file main.go, tìm các hàm searchMoviesCmd và fetchDetailMsg, dán thẳng mấy cái link API vô code luôn rồi hãy `go build`. Làm vậy thì cưng đứng ở đâu trên máy gõ xemphim nó cũng chạy, không cần lôi cái file .env đi theo khắp nơi.
 
 ---
 
-## 🚀 Cách Build & Chạy
+## 2️⃣ JSON Schema yêu cầu
 
-### Cách 1: Chạy trực tiếp (test cho lẹ)
+Để App có thể parse dữ liệu, API của cưng phải trả về đúng cấu trúc này:
+
+### 🔎 Search Result
+
+```json
+{
+  "status": true,
+  "items": [
+    {
+      "name": "Tên phim cực căng",
+      "slug": "ten-phim-cuc-cang",
+      "origin_name": "Hardcore Movie Name",
+      "year": 2024
+    }
+  ]
+}
+```
+
+---
+
+### 🎬 Movie Details
+
+```json
+{
+  "movie": {
+    "name": "Tên phim",
+    "content": "Mô tả nội dung phim cực sến...",
+    "episodes": [
+      {
+        "server_name": "Server Vietsub",
+        "server_data": [
+          { 
+            "name": "Tập 1", 
+            "link_m3u8": "https://stream.link/playlist.m3u8"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+> ⚠️ **Lưu ý:**
+> Mẹ sẽ **KHÔNG trả lời** bất kỳ tin nhắn/email nào hỏi về việc *"xin link phim"*.
+> Mọi gói tin hỏi về API lậu sẽ bị hốt lên C50 ngay lập tức. 🚓
+
+---
+
+# 🛠 Yêu cầu hệ thống
+
+Cái "động cơ" chính để phát phim là **MPV**. Cưng phải cài nó trước.
+
+### 🍎 MacOS
+
+```bash
+brew install mpv
+```
+
+### 🐧 Linux
+
+```bash
+sudo apt update && sudo apt install mpv
+```
+
+### 🪟 Windows
+
+* Tải bản Zip tại: [https://mpv.io](https://mpv.io)
+* Giải nén và add vào `PATH` hệ thống.
+
+---
+
+# 🚀 Cách Build & Chạy
+
+## ▶️ Cách 1: Chạy trực tiếp
+
 ```bash
 go run main.go
 ```
 
-### Cách 2: Build thành lệnh hệ thống (khuyên mấy cưng xài)
-Cưng vô cái folder ophim-cli nha
-- **MacOS/Linux:** `go build -o xemphim`
-`sudo mv xemphim /usr/local/bin/`
-Vậy là từ giờ cưng chỉ cần gõ "xemphim" trên Terminal/iTerm/Kitty của cưng là ào ào liền
-- **Windows (PowerShell):** `go build -o xemphim.exe`
-Sau đó add folder chứa file này vào PATH hoặc copy vào C:\Windows
+---
+
+## 🏗 Cách 2: Build thành lệnh hệ thống (Khuyên dùng)
+
+### MacOS / Linux
+
+```bash
+go build -o xemphim
+sudo mv xemphim /usr/local/bin/
+```
+
+### Windows (PowerShell)
+
+```powershell
+go build -o xemphim.exe
+# Sau đó add folder này vào PATH hệ thống
+```
 
 ---
 
-## ⌨️ Phím tắt khi xem (MPV)
-| Phím | Tác dụng |
-|------|----------|
-| `Space` | Tạm dừng / Xem tiếp |
-| `M` | Tắt/Mở tiếng |
-| `F` | Bật/Tắt Fullscreen |
-| `Q` | Thoát phim quay lại CLI |
-| `Mũi tên Trái/Phải` | Tua phim (-5s / +5s) |
+# ⌨️ Phím tắt khi xem (MPV)
+
+| Phím    | Tác dụng                |
+| ------- | ----------------------- |
+| `Space` | Tạm dừng / Xem tiếp     |
+| `M`     | Tắt/Mở tiếng            |
+| `F`     | Bật/Tắt Fullscreen      |
+| `Q`     | Thoát phim quay lại CLI |
+| `← / →` | Tua phim (-5s / +5s)    |
 
 ---
 
-## LƯU Ý
-Để hiện icon đẹp như trên terminal của cj thì mấy cưng nên xài terminal xịn như iTerm2 hoặc Kitty nho, và nhớ cài Nerd Fonts nèk!!!
+# 📜 LƯU Ý
+
+Để hiện icon đẹp như trên terminal của "chị":
+
+* Nên dùng terminal xịn như **iTerm2** hoặc **Kitty**
+* Cài **Nerd Fonts** (gợi ý: *JetBrainsMono Nerd Font*)
+
+Không có font là nó hiện ô vuông "vô tri" ráng chịu nha cục dzàng 😌
 
 ---
-# CHÚC MÍ CƯNG XEM PHIM ZUI
+
+# ❤️ CHÚC MÍ CƯNG HỌC CODE VUI VẺ
+
+*(VÀ XEM PHIM TRONG SỰ KÍN ĐÁO!)* 🍿
