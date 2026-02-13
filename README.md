@@ -1,7 +1,3 @@
-Dưới đây là phiên bản **Markdown chuẩn chỉnh** để bạn copy–paste thẳng vào `README.md` 👇
-
----
-
 # 🎬 OPHIM CLI – TÔI YÊU PHÂU LỊM (OPEN ENGINE EDITION) 🍿
 
 ---
