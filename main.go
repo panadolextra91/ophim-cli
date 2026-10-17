@@ -82,19 +82,23 @@ type SearchResponse struct {
 	} `json:"data"`
 }
 
+type EpisodeServer struct {
+	ServerData []Episode `json:"server_data"`
+}
+
 type MovieDetail struct {
-	Name     string `json:"name"`
-	Content  string `json:"content"`
+	Name     string
+	Content  string
 	ASCIIArt string
-	Episodes []struct {
-		ServerData []Episode `json:"server_data"`
-	} `json:"episodes"`
+	Episodes []EpisodeServer
 }
 
 type MovieDetailResponse struct {
-	Data struct {
-		Item MovieDetail `json:"item"`
-	} `json:"data"`
+	Movie struct {
+		Name    string `json:"name"`
+		Content string `json:"content"`
+	} `json:"movie"`
+	Episodes []EpisodeServer `json:"episodes"`
 }
 
 type DetailLoadedMsg struct {
@@ -209,10 +213,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// [QUAN TRỌNG] Nếu đang Search, mình chỉ xoá lỗi (nếu có)
 			// Tuyệt đối KHÔNG return m, nil ở đây.
 			// Hãy để nó chạy tiếp xuống cuối hàm để m.textInput nhận được phím xoá!
+			m.err = nil
 			if m.state == StateSearch {
-				if m.err != nil {
-					m.err = nil
-				}
 				// Không return gì cả, để nó "rơi" xuống dưới
 			} else {
 				// Các màn hình khác thì Backspace vẫn là quay lại
@@ -397,34 +399,47 @@ func searchMoviesCmd(keyword string) tea.Cmd {
 	return func() tea.Msg {
 		baseURL := os.Getenv("OPHIM_SEARCH_URL")
 		if baseURL == "" {
-			baseURL = "" //paste vô chỗ này
+			baseURL = "https://phimapi.com/v1/api/tim-kiem?keyword="
 		}
-		res, err := http.Get(baseURL + url.QueryEscape(keyword))
-		if err != nil {
-			return err
-		}
-		defer res.Body.Close()
 		var r SearchResponse
-		if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		if err := getJSON(baseURL+url.QueryEscape(keyword), &r); err != nil {
 			return err
 		}
 		return r
 	}
 }
 
+// getJSON gọi API rồi decode JSON. Nếu server trả lỗi hoặc trả HTML (domain chết,
+// bị chặn...) thì báo rõ thay vì "invalid character '<'".
+func getJSON(target string, v any) error {
+	client := &http.Client{Timeout: 15 * time.Second}
+	res, err := client.Get(target)
+	if err != nil {
+		return fmt.Errorf("không gọi được API: %w", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("API trả về HTTP %d, kiểm tra lại URL trong .env\n(%s)", res.StatusCode, target)
+	}
+	if ct := res.Header.Get("Content-Type"); !strings.Contains(ct, "json") {
+		return fmt.Errorf("API không trả JSON (Content-Type: %q), kiểm tra lại URL trong .env\n(%s)", ct, target)
+	}
+	if err := json.NewDecoder(res.Body).Decode(v); err != nil {
+		return fmt.Errorf("API trả JSON không đúng cấu trúc: %w", err)
+	}
+	return nil
+}
+
 func fetchDetailMsg(slug, thumb string, isEnter bool) tea.Msg {
 	baseURL := os.Getenv("OPHIM_DETAIL_URL")
 	if baseURL == "" {
-		baseURL = "" //paste vô chỗ này
+		baseURL = "https://phimapi.com/phim/"
 	}
-	res, err := http.Get(baseURL + slug)
-	if err != nil {
-		return DetailLoadedMsg{IsError: true}
-	}
-	defer res.Body.Close()
 	var r MovieDetailResponse
-	json.NewDecoder(res.Body).Decode(&r)
-	d := r.Data.Item
+	if err := getJSON(baseURL+url.PathEscape(slug), &r); err != nil {
+		return err
+	}
+	d := MovieDetail{Name: r.Movie.Name, Content: r.Movie.Content, Episodes: r.Episodes}
 
 	fallbackBlock := lipgloss.NewStyle().Align(lipgloss.Center).Render(lipgloss.JoinVertical(lipgloss.Center,
 		lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#f9e2af")).Render("🎬 OPHIM"),
